@@ -43,6 +43,41 @@ curl http://SERVIDOR:18080/manual
 curl http://SERVIDOR:18080/partes
 ```
 
+## Qué construís vosotros
+
+La planta ya funciona, pero **no recuerda nada**. Lo que se ve en su web es el instante presente; en
+cuanto pasa, se pierde. Hoy nadie puede contestar a preguntas como estas:
+
+- ¿Cuántas piezas KO hubo ayer, y de qué impresora salieron?
+- ¿Cuánto tardó de media un pedido esta semana?
+- ¿Qué piezas se imprimieron con el lote de bobina `PLA-AZU-001-01`?
+- ¿Cuántas veces se ha atascado `bambu-03` este mes, y qué hizo el operario cada vez?
+
+Los datos para responderlas pasan por MQTT, pero nadie los guarda: MQTT entrega cada mensaje a quien
+esté escuchando en ese momento y lo olvida. Vuestro asistente tiene que responder justo a preguntas
+así, de modo que antes necesita esa memoria. **No tocáis la planta: construís al lado lo que escucha,
+guarda y responde.**
+
+```
+Planta ──MQTT──▶ Productor ──▶ Kafka ──▶ Consumidor ──▶ PostgreSQL
+(ya existe)      (vosotros)    (vosotros) (vosotros)     (vosotros)
+```
+
+- **Productor:** un programa vuestro que se suscribe al MQTT de la planta y publica cada mensaje en
+  Kafka. Es el puente entre la planta y la empresa.
+- **Kafka:** guarda los mensajes en orden y durante días. Si vuestro consumidor se cae una hora, al
+  volver sigue por donde iba y no pierde nada; con MQTT a secas, esa hora se habría perdido. Además,
+  varios consumidores pueden leer lo mismo sin estorbarse: uno hacia PostgreSQL, otro hacia Elasticsearch.
+- **Consumidor:** lee de Kafka, limpia y da forma a los datos y los escribe en PostgreSQL.
+- **PostgreSQL:** lo que tiene estructura y relaciones, para preguntar con SQL. Una pieza pertenece a
+  un pedido, se imprimió en una impresora con un lote, pasó o no la cámara y tuvo o no una alarma:
+  eso son tablas con claves.
+- **Elasticsearch:** el texto para buscar: el manual, los partes diarios, los partes del operario y
+  los textos de las alarmas.
+
+Una decisión que os toca: la telemetría de cada segundo son más de dos millones de mensajes al día.
+Guardarla entera, resumida, solo una parte o no guardarla es diseño vuestro, y hay que justificarlo.
+
 ## Reglas del juego
 
 - **Por MQTT solo se lee.** Lo que publiquéis por esa entrada no llega a nadie.
