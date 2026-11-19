@@ -8,7 +8,7 @@ esto solo explica **quién es vuestro cliente y qué datos tenéis**.
 
 El cliente de DataBot Solutions es una fábrica de piezas impresas en 3D que trabaja sola, las 24 horas:
 seis impresoras, cuatro robots móviles, brazos, cubas, una cinta con cámara de calidad, un almacén
-automático y un operario que atiende las averías. Es una **planta simulada** (un gemelo digital), pero
+automático y un operario de mantenimiento por turno que atiende las averías. Es una **planta simulada** (un gemelo digital), pero
 sus datos salen como saldrían de una planta de verdad, y no para.
 
 Su problema es el del enunciado: tiene muchos datos, dispersos y en constante actualización, y nadie
@@ -28,6 +28,7 @@ Acceso a los datos de la planta, no a su código. Como en un cliente real.
 | **Manual de la planta** | `http://SERVIDOR:18080/manual` | Explica las máquinas, el proceso, el catálogo, los códigos de alarma y todos los mensajes. Son páginas web, **sin API** |
 | **Datos en vivo (MQTT)** | `SERVIDOR`, puerto `11898`, con usuario y contraseña | Telemetría de cada máquina cada segundo, avisos, pedidos, alarmas, partes de mantenimiento, energía. **Solo lectura** |
 | **Web de la planta** | `http://SERVIDOR:18080` | Ver la planta en marcha, **mandar pedidos y provocar averías** para vuestras pruebas |
+| **Documentos de la planta** | `http://SERVIDOR:18080/documentos` | Procedimientos de mantenimiento, guías de averías por código de alarma, fichas de los equipos y materiales, normas de seguridad y turnos. Los partes del operario citan el procedimiento por su código. Páginas web, **sin API** |
 | **Partes diarios** | `http://SERVIDOR:18080/partes` | Una página por día con lo que ha pasado: pedidos, producción, piezas KO, alarmas, partes de mantenimiento y energía. La de hoy **cambia durante el día**. Tampoco tiene API |
 
 La dirección del servidor, el usuario y la contraseña os los da el profesor. **No los subáis a ningún repositorio.**
@@ -38,8 +39,9 @@ Para empezar a mirar:
 # todos los avisos de la planta, según ocurren
 mosquitto_sub -h SERVIDOR -p 11898 -u USUARIO -P CONTRASEÑA -t 'factory/events/#' -v
 
-# la portada del manual y el parte de hoy
+# la portada del manual, los documentos y el parte de hoy
 curl http://SERVIDOR:18080/manual
+curl http://SERVIDOR:18080/documentos
 curl http://SERVIDOR:18080/partes
 ```
 
@@ -140,7 +142,7 @@ Lo que el enunciado pide y lo que la planta ofrece para ello. El diseño es vues
 |---|---|
 | Scraping de fuentes sin API, que se actualizan | Los partes diarios (cambian durante el día) y el manual de la planta. Y documentación pública de los fabricantes de las máquinas, por ejemplo los códigos de alarma de las impresoras: <https://wiki.bambulab.com/en/hms/home> |
 | Datos en tiempo real | Los mensajes MQTT: pedidos, piezas, avisos, alarmas, órdenes de mantenimiento, telemetría |
-| Texto para indexar y buscar | Los capítulos del manual, los textos de las alarmas y los **partes que escribe el operario** al acabar cada tarea (llegan por MQTT y salen en el parte diario) |
+| Texto para indexar y buscar | Los capítulos del manual, los **documentos de la planta**, los textos de las alarmas y los **partes que escribe el operario** al acabar cada tarea (llegan por MQTT y salen en el parte diario) |
 | Preguntas que comparan o analizan datos en vivo | «¿Qué impresoras están paradas y por qué?», «¿cuántas piezas KO ha habido hoy y de qué tipo?» |
 | Visualizaciones | Incidencias por código y por máquina, piezas KO, tiempos del operario, consumo eléctrico |
 | Evaluar el asistente | Preguntas cuya respuesta se puede comprobar en el manual, en los partes o en la web de la planta |
